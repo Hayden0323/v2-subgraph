@@ -10,7 +10,7 @@ import {
   Swap as SwapEvent,
   Bundle
 } from '../types/schema'
-import { Pair as PairContract, Mint, Burn, Swap, Transfer, Sync } from '../types/templates/Pair/Pair'
+import { Pair as PairContract, Mint, Burn, Swap, Transfer } from '../types/templates/Pair/Pair'
 import { updatePairDayData, updateTokenDayData, updateUniswapDayData, updatePairHourData } from './dayUpdates'
 import { getEthPriceInUSD, findEthPerToken, getTrackedVolumeUSD, getTrackedLiquidityUSD } from './pricing'
 import {
@@ -22,7 +22,8 @@ import {
   createLiquidityPosition,
   ZERO_BD,
   BI_18,
-  createLiquiditySnapshot
+  createLiquiditySnapshot,
+  ZERO_BI
 } from './helpers'
 
 function isCompleteMint(mintId: string): boolean {
@@ -210,8 +211,14 @@ export function handleTransfer(event: Transfer): void {
   transaction.save()
 }
 
-export function handleSync(event: Sync): void {
-  let pair = Pair.load(event.address.toHex())
+export function handleSync(
+  pairAddress: Address, 
+  amount0In: BigInt, 
+  amount1In: BigInt,
+  amount0Out: BigInt,
+  amount1Out: BigInt
+): void {
+  let pair = Pair.load(pairAddress.toHex())
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
   let uniswap = UniswapFactory.load(FACTORY_ADDRESS)
@@ -223,8 +230,10 @@ export function handleSync(event: Sync): void {
   token0.totalLiquidity = token0.totalLiquidity.minus(pair.reserve0)
   token1.totalLiquidity = token1.totalLiquidity.minus(pair.reserve1)
 
-  pair.reserve0 = convertTokenToDecimal(event.params.reserve0, token0.decimals)
-  pair.reserve1 = convertTokenToDecimal(event.params.reserve1, token1.decimals)
+  pair.reserve0 = pair.reserve0.plus(convertTokenToDecimal(amount0In, token0.decimals))
+    .minus(convertTokenToDecimal(amount0Out, token0.decimals))
+  pair.reserve1 = pair.reserve1.plus(convertTokenToDecimal(amount1In, token1.decimals))
+    .minus(convertTokenToDecimal(amount1Out, token1.decimals))
 
   if (pair.reserve1.notEqual(ZERO_BD)) pair.token0Price = pair.reserve0.div(pair.reserve1)
   else pair.token0Price = ZERO_BD
@@ -276,6 +285,7 @@ export function handleSync(event: Sync): void {
 }
 
 export function handleMint(event: Mint): void {
+  handleSync(event.address, event.params.amount0, event.params.amount1, ZERO_BI, ZERO_BI)
   let transaction = Transaction.load(event.transaction.hash.toHexString())
   let mints = transaction.mints
   let mint = MintEvent.load(mints[mints.length - 1])
@@ -331,6 +341,7 @@ export function handleMint(event: Mint): void {
 }
 
 export function handleBurn(event: Burn): void {
+  handleSync(event.address, ZERO_BI, ZERO_BI, event.params.amount0, event.params.amount1)
   let transaction = Transaction.load(event.transaction.hash.toHexString())
 
   // safety check
@@ -393,6 +404,13 @@ export function handleBurn(event: Burn): void {
 }
 
 export function handleSwap(event: Swap): void {
+  handleSync(
+    event.address, 
+    event.params.amount0In, 
+    event.params.amount1In, 
+    event.params.amount0Out,
+    event.params.amount1Out
+  )
   let pair = Pair.load(event.address.toHexString())
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
