@@ -6,7 +6,7 @@
   "scripts": {
     "codegen": "graph codegen --output-dir src/types/",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ hayden0323/hayden-v1 subgraph.yaml"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ hayden0323/hayden-v2 subgraph.yaml"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.21.0",

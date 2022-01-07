@@ -11,7 +11,11 @@ const WHITELIST: string[] = [
   '0x0f47ba9d9Bde3442b42175e51d6A367928A1173B', //ZLK
   '0x98878b06940ae243284ca214f92bb71a2b032b8a', //WMOVR
   '0xe3f5a90f9cb311505cd691a46596599aa1a0ad7d', //USDC
-  '0x5d9ab5522c64e1f6ef5e3627eccc093f56167818' //BUSD
+  '0x5d9ab5522c64e1f6ef5e3627eccc093f56167818', //BUSD
+  '0x639a647fbe20b6c8ac19e48e2de44ea792c62c5c', //ETH
+  '0x80a16016cc4a2e6a2caca8a4a498b1699ff0f844', //DAI
+  '0x5d9ab5522c64e1f6ef5e3627eccc093f56167818', //BUSD
+  '0x2bf9b864cdc97b08b6d79ad4663e71b8ab65c45c' //BNB
 ]
 
 export function getEthPriceInUSD(): BigDecimal {
